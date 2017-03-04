@@ -1,18 +1,11 @@
 import csv
 import math
+from fileHelper import *
 
 
 F   = 1.0 / 298.257224
 RAD = 6378137.0
 H   = 0.0
-
-
-def read(fileName):
-    with open(fileName, 'rb') as f:
-        reader = csv.reader(f, delimiter=' ')
-        lines = list(reader)
-
-    return lines
 
 
 def latLonZ2XYZ(line):
@@ -33,13 +26,8 @@ def latLonZ2XYZ(line):
     return map(str, [x, y, z, intensity])
 
 
-def writeToFile(lst, fileName):
-    with open(fileName, 'wb') as f:
-        for line in lst:
-            f.write('%s\n' % ' '.join(line))
-
-
 if __name__ == '__main__':
     # print read('final_project_data/final_project_point_cloud.fuse')[0:2]
-    convertedList = map(latLonZ2XYZ, read('final_project_data/final_project_point_cloud.fuse'))
+    # convertedList = map(latLonZ2XYZ, read('final_project_data/final_project_point_cloud.fuse'))
+    convertedList = map(latLonZ2XYZ, read('xyzi.dat'))
     writeToFile(convertedList, 'xyzi.dat')
