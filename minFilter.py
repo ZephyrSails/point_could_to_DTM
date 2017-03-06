@@ -14,20 +14,28 @@ def findRectangle(lines):
     return min(X), max(X), min(Y), max(Y)
 
 
+def findMinAndStride(lines):
+    """
+    find the rectangle and stride
+    """
+    xMin, xMax, yMin, yMax = findRectangle(lines)
+    xStride, yStride = (xMax - xMin) / N, (yMax - yMin) / N
+    NY = int((yMax - yMin) / xStride)
+    return xStride, xMin, yMin, NY
+
+
 def splitToMatrix(lines):
     """
     map points to matrix, use grid in matrix to re-groupe the data
     """
-    xMin, xMax, yMin, yMax = findRectangle(lines)
 
-    xStride, yStride = (xMax - xMin) / N, (yMax - yMin) / N
+    xStride, xMin, yMin, NY = findMinAndStride(lines)
 
-    NY = int((yMax - yMin) / xStride)
     matrix = [[[] for _ in xrange(int(NY))] for _ in xrange(int(N))]
 
     for x, y, z, i in lines:
         xi = int((x - xMin) / xStride)
-        yi = int((y - yMin) / yStride)
+        yi = int((y - yMin) / xStride)
         # print xStride, yStride, xMin, xMax, yMin, yMax, xi, yi, x - xMin, y - yMin
 
         matrix[xi-1][yi-1].append((x, y, z, i))

@@ -3,10 +3,14 @@ import cv2
 import matplotlib.pyplot as plt
 
 
-M = 40
+M = 40  # M will influence recSmooth, if we make M smaller
+        # recSmooth will search through larger area for each missing grid.
 
 
 def recSmooth(I, J, gMatrix, n):
+    """
+    use the nearby grid to predict the missing grid
+    """
     # print n
     count = 0
     hSum = 0
@@ -27,37 +31,45 @@ def recSmooth(I, J, gMatrix, n):
 
 
 def toGaussianMatrix(matrix):
-    X, Y = len(matrix), int(len(matrix[0]) * (900 / 1741.0))
+    """
+    transform the point cloud to grid
+    which can be used to deploy gaussian blur later
+    """
+    # (900 / 1741.0) is hardcoded to cut the image, remove the sparse area.
+    X, Y = len(matrix), len(matrix[0])
 
+    # init the gaussian matrix, currently just keeping the min value for each grid.
     gMatrix = [[min(matrix[i][j], key=lambda n: n[2])[2] if matrix[i][j] else None for j in xrange(Y)] for i in xrange(X)]
+    # hardcoded to cut the image, remove the sparse area.
+    gMatrix = np.array(gMatrix)[200:1000, 400:1200]
 
-    while True:
+    while True: # Some of the grid in the matrix is missing, we need to put some value into them
         countNone = 0
-        # print X, Y
-        for i in xrange(X):
+        for i in xrange(len(gMatrix)):
             print i
-            for j in xrange(Y):
+            for j in xrange(len(gMatrix[0])):
                 if gMatrix[i][j] is None:
-                    # recSmooth(i, j, gMatrix, X / M)
+                    # gMatrix[i][j] = 0
                     gMatrix[i][j] = recSmooth(i, j, gMatrix, X / M)
-                    # print gMatrix[i][j]
                     if gMatrix[i][j] is None:
                         countNone += 1
         if countNone == 0: break
         print '-------', countNone
 
     return gMatrix
-    # 458101
-    # 458101
 
 
 def gaussianSmooth():
+    """
+    Main function, the output is saved in 'minSmoothed.npy', used later.
+    """
     lines = read('xyzi.dat')
     matrix = splitToMatrix(lines)
     gMatrix = np.array(toGaussianMatrix(matrix))
 
-    np.save('minSmoothed.npy', gMatrix)
+    np.save('minSmoothed2.npy', gMatrix)
     print gMatrix.dtype
+    gMatrix = map(lambda n: map(float, n), gMatrix)
 
     cv2.imwrite('color_img.jpg', gMatrix)
 
@@ -68,14 +80,33 @@ def gaussianSmooth():
     plt.show()
 
 
+def saveToPointCloud(image, fileName):
+    """
+    save the grid matrix as point cloud
+    """
+    lines = read('xyzi.dat')
+    stride, xMin, yMin, _ = findMinAndStride(lines)
+    xMin, yMin = xMin + 200 * stride, yMin + 400 * stride
+    with open(fileName, 'wb') as f:
+        for i in xrange(len(image)):
+            for j in xrange(len(image[0])):
+                f.write('%f %f %f\n' % ((xMin + i * stride), (yMin + j * stride), image[i][j]))
+
+
 def readAndGaussian():
+    """
+    Read saved grid image, and deploy Gaussian.
+    """
     # cv2.imwrite('color_img.jpg', gMatrix)
     # image = cv2.imread('color_img.jpg', 0)
-    image = np.load('minSmoothed.npy')
+    image = np.load('minSmoothed2.npy')
+    image = np.array(map(lambda n: map(float, n), image))
     # image = np.load('smmothed.npy')
-    blur = cv2.GaussianBlur(image, (99, 99), 0)
+    image = cv2.GaussianBlur(image, (149, 149), 0)
 
-    plt.imshow(blur)
+    saveToPointCloud(image, 'GaussianPointCloud.dat')
+
+    plt.imshow(image)
     plt.colorbar()
     plt.show()
 
