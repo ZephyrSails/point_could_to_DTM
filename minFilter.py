@@ -2,7 +2,7 @@ import numpy as np
 from fileHelper import *
 
 
-N = 1000.0
+N = 100.0
 
 
 def findRectangle(lines):
