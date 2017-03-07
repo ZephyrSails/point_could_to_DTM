@@ -6,7 +6,7 @@ import copy
 
 INPUT_POINT_CLOUD = 'xyzi.dat'
 # INPUT_POINT_CLOUD = 'de_spike.txt'
-GRID_REPRESENTATION = 'minSmoothed3.npy'
+GRID_REPRESENTATION = 'minSmoothed4.npy'
 M = 10  # M will influence recSmooth, if we make M smaller
         # recSmooth will search through larger area for each missing grid.
 
@@ -59,19 +59,23 @@ def toGaussianMatrix(matrix):
 
     mask = np.array([[1 if mask[i][j] >= 224.5 else 0 for j in xrange(Y)] for i in xrange(X)])
 
-    while True: # Some of the grid in the matrix is missing, we need to put some value into them
-        countNone = 0
-        cpMatrix = copy.deepcopy(gMatrix)
-        for i in xrange(len(gMatrix)):
-            print i
-            for j in xrange(len(gMatrix[0])):
-                if gMatrix[i][j] is None:
-                    # gMatrix[i][j] = 0
-                    gMatrix[i][j] = recSmooth(i, j, cpMatrix, X / M)
-                    if gMatrix[i][j] is None:
-                        countNone += 1
-        if countNone == 0: break
-        print '-------', countNone
+    kernel = np.ones((10, 10), np.uint8)
+    gMatrix = cv2.erode(gMatrix, kernel, iterations = 1)
+    # while True: # Some of the grid in the matrix is missing, we need to put some value into them
+    #     countNone = 0
+    #     cpMatrix = copy.deepcopy(gMatrix)
+    #     for i in xrange(len(gMatrix)):
+    #         print i
+    #         for j in xrange(len(gMatrix[0])):
+    #             # if gMatrix[i][j] is None:
+    #             if True:
+    #                 # gMatrix[i][j] = 0
+    #                 # gMatrix[i][j] = recSmooth(i, j, cpMatrix, X / M)
+    #                 gMatrix[i][j] = recSmooth(i, j, cpMatrix, 20)
+    #                 if gMatrix[i][j] is None:
+    #                     countNone += 1
+    #     if countNone == 0: break
+    #     print '-------', countNone
 
     return gMatrix, mask
 
@@ -149,4 +153,4 @@ def readAndGaussian():
 
 if __name__ == '__main__':
     gaussianSmooth()
-    #readAndGaussian()
+    # readAndGaussian()
