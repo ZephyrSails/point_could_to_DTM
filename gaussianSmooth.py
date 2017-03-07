@@ -104,6 +104,7 @@ def gaussianSmooth():
     plt.imshow(image)
     plt.colorbar()
     plt.show()
+    saveToPointCloud(image,'test.txt')
 
 
 def saveToPointCloud(image, fileName):
@@ -148,4 +149,4 @@ def readAndGaussian():
 
 if __name__ == '__main__':
     gaussianSmooth()
-    # readAndGaussian()
+    #readAndGaussian()
