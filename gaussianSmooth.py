@@ -9,7 +9,16 @@ INPUT_POINT_CLOUD = 'xyzi.dat'
 GRID_REPRESENTATION = 'minSmoothed4.npy'
 M = 10  # M will influence recSmooth, if we make M smaller
         # recSmooth will search through larger area for each missing grid.
+G_BLUR1=17
+G_BLUR2=7
 
+M_KERNEL1=6
+M_KERNEL2=10
+
+HEIGHT_MIN=221
+HEIGHT_MID=223
+HEIGHT_MAX=224.5
+HEIGHT_LIMIT=222.34
 
 def recSmooth(I, J, gMatrix, n):
     """
@@ -43,23 +52,23 @@ def toGaussianMatrix(matrix):
     X, Y = len(matrix), len(matrix[0])
 
     # init the gaussian matrix, currently just keeping the min value for each grid.
-    gMatrix = np.array([[min(matrix[i][j], key=lambda n: n[2])[2] if matrix[i][j] else 222.34 for j in xrange(Y)] for i in xrange(X)])
+    gMatrix = np.array([[min(matrix[i][j], key=lambda n: n[2])[2] if matrix[i][j] else HEIGHT_LIMIT for j in xrange(Y)] for i in xrange(X)])
     # hardcoded to cut the image, remove the sparse area.
     # gMatrix = np.array(gMatrix)[200:1000, 400:1200]
     # print gMatrix[80][96], gMatrix[89][166]
 
-    kernel = np.ones((6, 6), np.uint8)
+    kernel = np.ones((M_KERNEL1, M_KERNEL1), np.uint8)
     mask = cv2.erode(gMatrix, kernel, iterations = 1)
 
-    mask = np.array([[mask[i][j] if mask[i][j] != 223 else 221 for j in xrange(Y)] for i in xrange(X)])
+    mask = np.array([[mask[i][j] if mask[i][j] != HEIGHT_MID else HEIGHT_MID for j in xrange(Y)] for i in xrange(X)])
     # kernel = np.ones((5, 5), np.uint8)
     mask = cv2.dilate(mask, kernel, iterations = 3)
 
     mask = cv2.erode(mask, kernel, iterations = 1)
 
-    mask = np.array([[1 if mask[i][j] >= 224.5 else 0 for j in xrange(Y)] for i in xrange(X)])
+    mask = np.array([[1 if mask[i][j] >= HEIGHT_MAX else 0 for j in xrange(Y)] for i in xrange(X)])
 
-    kernel = np.ones((10, 10), np.uint8)
+    kernel = np.ones((M_KERNEL2, M_KERNEL2), np.uint8)
     gMatrix = cv2.erode(gMatrix, kernel, iterations = 1)
     # while True: # Some of the grid in the matrix is missing, we need to put some value into them
     #     countNone = 0
@@ -95,13 +104,13 @@ def gaussianSmooth():
 
     # cv2.imwrite('color_img.jpg', gMatrix)
 
-    blur = cv2.GaussianBlur(gMatrix, (17, 17), 0)
+    blur = cv2.GaussianBlur(gMatrix, (G_BLUR1, G_BLUR1), 0)
 
     mean = gMatrix[mask == 1].mean()
 
     image = np.array([[mean if mask[i][j] else blur[i][j] for j in xrange(len(gMatrix[0]))] for i in xrange(len(gMatrix))])
 
-    image = cv2.GaussianBlur(image, (7, 7), 0)
+    image = cv2.GaussianBlur(image, (G_BLUR2, G_BLUR2), 0)
 
     # image[image == 223] = 0
 
@@ -133,7 +142,7 @@ def readAndGaussian():
     image = np.load(GRID_REPRESENTATION)
     image = np.array(map(lambda n: map(float, n), image))
     # image = np.load('smmothed.npy')
-    blur = cv2.GaussianBlur(image, (7, 7), 0)
+    blur = cv2.GaussianBlur(image, (G_BLUR2, G_BLUR2), 0)
 
     blur = np.array(map(lambda n: map(int, n), blur))
 
